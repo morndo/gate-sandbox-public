@@ -1,0 +1,21 @@
+name: bot-pr
+# Opens a PR authored by github-actions[bot] (a GitHub App), standing in for the lane App.
+on:
+  workflow_dispatch:
+    inputs:
+      branch: {required: true}
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  pr:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BR: ${{ inputs.branch }}
+    steps:
+      - run: |
+          base=$(gh api repos/$GITHUB_REPOSITORY/git/ref/heads/main --jq .object.sha)
+          gh api -X POST repos/$GITHUB_REPOSITORY/git/refs -f ref="refs/heads/$BR" -f sha="$base" --jq .ref
+          gh api -X PUT repos/$GITHUB_REPOSITORY/contents/notes/$BR.txt -f message="test: $BR" -f branch="$BR" -f content=$(printf 'one\n' | base64 -w0) --jq .commit.sha
+          gh api -X POST repos/$GITHUB_REPOSITORY/pulls -f title="sandbox $BR" -f head="$BR" -f base=main -f body="step 0 sandbox PR" --jq '.number,.user.login'

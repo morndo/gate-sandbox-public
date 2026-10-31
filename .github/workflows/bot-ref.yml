@@ -1,0 +1,18 @@
+name: bot-ref
+# Tries to create refs with the github-actions App token. Prints the HTTP status of each.
+on:
+  workflow_dispatch:
+    inputs:
+      refs: {required: true, description: "space-separated full refs, e.g. refs/tags/v0.0.9 refs/heads/release/x"}
+permissions:
+  contents: write
+jobs:
+  ref:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REFS: ${{ inputs.refs }}
+    steps:
+      - run: |
+          base=$(gh api repos/$GITHUB_REPOSITORY/git/ref/heads/main --jq .object.sha)
+          for r in $REFS; do echo "== $r"; gh api -i -X POST repos/$GITHUB_REPOSITORY/git/refs -f ref="$r" -f sha="$base" 2>&1 | grep -E '^HTTP|"message"' || true; done

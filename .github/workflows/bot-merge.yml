@@ -1,0 +1,20 @@
+name: bot-merge
+# PUT /pulls/N/merge with the github-actions App token, pinned to a sha. Prints the HTTP status.
+on:
+  workflow_dispatch:
+    inputs:
+      pr: {required: true}
+      sha: {required: true}
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR: ${{ inputs.pr }}
+      SHA: ${{ inputs.sha }}
+    steps:
+      - run: |
+          gh api -i -X PUT repos/$GITHUB_REPOSITORY/pulls/$PR/merge -f sha="$SHA" -f merge_method=merge 2>&1 | grep -E '^HTTP|"message"|"merged"' || true
